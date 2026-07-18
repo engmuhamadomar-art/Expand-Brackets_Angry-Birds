@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Algebra Distribution Slingshot</title>
+    <style>
+        :root {
+            --primary: #ef4444; 
+            --wood: #b45309;    
+            --bg: #f0fdf4;     
+            --text: #0f172a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            touch-action: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            background: white;
+            padding: 30px;
+            border-radius: 28px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.06);
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 25px;
+            color: #1e293b;
+        }
+
+        /* Flexible Layout Panel */
+        .setup-panel {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            border: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .input-group label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .setup-panel input {
+            padding: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-align: center;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            outline: none;
+            background: white;
+            color: var(--text);
+        }
+
+        #inputMultiplier { width: 90px; }
+        #inputInside { width: 280px; text-align: left; padding-left: 15px; }
+
+        .bracket-sign {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #94a3b8;
+            margin-top: 15px;
+        }
+
+        /* Math Arena Display */
+        .math-arena {
+            position: relative;
+            height: 280px;
+            margin: 20px 0;
+            background: #fafafa;
+            border-radius: 20px;
+            border: 2px dashed #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .expression {
+            display: flex;
+            align-items: center;
+            font-size: 3rem;
+            font-weight: 800;
+            gap: 8px;
+            position: relative;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+
+        .bracket {
+            font-size: 4rem;
+            font-weight: 300;
+            color: #94a3b8;
+        }
+
+        .term {
+            position: relative;
+            padding: 0 4px;
+            transition: transform 0.2s, color 0.2s;
+            display: inline-block;
+        }
+
+        .term.highlight {
+            color: #2563eb;
+            transform: scale(1.1);
+        }
+
+        sup {
+            font-size: 0.6em;
+            vertical-align: super;
+            line-height: 0;
+        }
+
+        /* Slingshot Graphics */
+        .slingshot-container {
+            position: absolute;
+            left: 5%;
+            bottom: 15px;
+            width: 80px;
+            height: 110px;
+            z-index: 10;
+        }
+
+        .slingshot-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .rubber-band {
+            stroke: #475569;
+            stroke-width: 5;
+            stroke-linecap: round;
+            fill: none;
+        }
+
+        .bird-projectile {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            cursor: grab;
+            z-index: 15;
+            transform: translate(-50%, -50%);
+        }
+
+        .animation-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .split-bird {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .split-bird-value {
+            position: absolute;
+            top: -25px;
+            font-size: 1.1rem;
+            font-weight: 900;
+            background: white;
+            padding: 2px 6px;
+            border-radius: 6px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            white-space: nowrap;
+        }
+
+        /* Result Display Banner */
+        .result-banner {
+            margin-top: 30px;
+            padding: 20px;
+            background: #eff6ff;
+            border-radius: 16px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #1e40af;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease-out;
+        }
+        .result-banner.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reset-btn {
+            display: block;
+            margin: 20px auto 0 auto;
+            padding: 10px 20px;
+            background: #64748b;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Algebra Distribution Slingshot</h1>
+
+    <!-- Multi-Term Input Panel -->
+    <div class="setup-panel">
+        <div class="input-group">
+            <label>Outside Term</label>
+            <input type="text" id="inputMultiplier" value="3a" maxlength="5" oninput="resetSimulation()">
+        </div>
+        <div class="bracket-sign">(</div>
+        <div class="input-group">
+            <label>Inside Terms (use + to separate)</label>
+            <input type="text" id="inputInside" value="a + b + c" maxlength="25" oninput="resetSimulation()">
+        </div>
+        <div class="bracket-sign">)</div>
+    </div>
+
+    <!-- Playground Canvas -->
+    <div class="math-arena" id="mathArena">
+        <div class="expression" id="expressionContainer">
+            <!-- Dynamically generated terms will load here -->
+        </div>
+
+        <!-- Slingshot Core -->
+        <div class="slingshot-container" id="slingshotZone">
+            <svg class="slingshot-svg">
+                <line class="rubber-band" id="bandLeft" x1="15" y1="20" x2="40" y2="20" />
+                <line class="rubber-band" id="bandRight" x1="65" y1="20" x2="40" y2="20" />
+                <path d="M 40 120 L 40 50 L 15 20 M 40 50 L 65 20" stroke="var(--wood)" stroke-width="8" stroke-linecap="round" fill="none" />
+            </svg>
+            
+            <div class="bird-projectile" id="mainBird">
+                <svg viewBox="0 0 100 100" width="100%" height="100%">
+                    <circle cx="50" cy="50" r="45" fill="#ef4444" stroke="#b91c1c" stroke-width="3"/>
+                    <path d="M 25 55 Q 50 75 75 55" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M 20 32 L 48 42 M 80 32 L 52 42" stroke="#000" stroke-width="6" stroke-linecap="round"/>
+                    <circle cx="35" cy="46" r="7" fill="white"/> <circle cx="35" cy="46" r="3" fill="black"/>
+                    <circle cx="65" cy="46" r="7" fill="white"/> <circle cx="65" cy="46" r="3" fill="black"/>
+                    <polygon points="42,50 58,50 50,68" fill="#f59e0b" stroke="#d97706" stroke-width="2"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="animation-overlay" id="animationOverlay"></div>
+    </div>
+
+    <div class="result-banner" id="resultBanner">
+        Expanded Result: <span id="finalAnswerText"></span>
+    </div>
+    
+    <button class="reset-btn" onclick="resetSimulation()">Reset Arena</button>
+</div>
+
+<script>
+    const mainBird = document.getElementById('mainBird');
+    const slingshotZone = document.getElementById('slingshotZone');
+    const bandLeft = document.getElementById('bandLeft');
+    const bandRight = document.getElementById('bandRight');
+    const mathArena = document.getElementById('mathArena');
+    const animationOverlay = document.getElementById('animationOverlay');
+    const resultBanner = document.getElementById('resultBanner');
+    const expressionContainer = document.getElementById('expressionContainer');
+
+    const inputMultiplier = document.getElementById('inputMultiplier');
+    const inputInside = document.getElementById('inputInside');
+
+    let anchorX = 40; 
+    let anchorY = 20;
+    let isDragging = false;
+    let currentX = anchorX;
+    let currentY = anchorY;
+    let isFired = false;
+
+    const birdSvgMarkup = `
+        <svg viewBox="0 0 100 100" width="100%" height="100%">
+            <circle cx="50" cy="50" r="45" fill="#ef4444" stroke="#b91c1c" stroke-width="3"/>
+            <path d="M 20 32 L 48 42 M 80 32 L 52 42" stroke="#000" stroke-width="6" stroke-linecap="round"/>
+            <circle cx="35" cy="46" r="7" fill="white"/><circle cx="35" cy="46" r="3" fill="black"/>
+            <circle cx="65" cy="46" r="7" fill="white"/><circle cx="65" cy="46" r="3" fill="black"/>
+            <polygon points="42,50 58,50 50,68" fill="#f59e0b" stroke="#d97706" stroke-width="2"/>
+        </svg>`;
+
+    // 1) Robust Algebraic Core to handle multiplication like 3a * a = 3a²
+    function multiplyTerms(term1, term2) {
+        term1 = term1.trim();
+        term2 = term2.trim();
+        
+        function parse(t) {
+            if (!t) return { coeff: 1, vars: {} };
+            const match = t.match(/^([+-]?\d*\.?\d*)(.*)$/);
+            let coeffStr = match[1];
+            let varStr = match[2];
+            
+            let coeff = 1;
+            if (coeffStr === "-") coeff = -1;
+            else if (coeffStr === "+") coeff = 1;
+            else if (coeffStr !== "") coeff = parseFloat(coeffStr);
+            
+            const vars = {};
+            for (let char of varStr) {
+                if (char !== ' ' && char !== '*') {
+                    vars[char] = (vars[char] || 0) + 1;
+                }
+            }
+            return { coeff, vars };
+        }
+        
+        const p1 = parse(term1);
+        const p2 = parse(term2);
+        
+        let finalCoeff = p1.coeff * p2.coeff;
+        let finalVars = {};
+        
+        for (let v in p1.vars) finalVars[v] = (finalVars[v] || 0) + p1.vars[v];
+        for (let v in p2.vars) finalVars[v] = (finalVars[v] || 0) + p2.vars[v];
+        
+        let outStr = "";
+        if (finalCoeff === -1 && Object.keys(finalVars).length > 0) outStr += "-";
+        else if (finalCoeff !== 1 || Object.keys(finalVars).length === 0) outStr += finalCoeff;
+        
+        const sortedVars = Object.keys(finalVars).sort();
+        for (let v of sortedVars) {
+            outStr += v;
+            if (finalVars[v] > 1) outStr += `<sup>${finalVars[v]}</sup>`;
+        }
+        return outStr;
+    }
+
+    // 2) Dynamic Layout Renderer based on arbitrary amount of input terms
+    function resetSimulation() {
+        isFired = false;
+        isDragging = false;
+        currentX = anchorX;
+        currentY = anchorY;
+        
+        animationOverlay.innerHTML = "";
+        resultBanner.classList.remove('visible');
+        mainBird.style.display = "block";
+        setBirdPosition(anchorX, anchorY);
+        updateBands(anchorX, anchorY);
+
+        expressionContainer.innerHTML = '';
+        
+        const mVal = inputMultiplier.value.trim() || "3";
+        const insideRaw = inputInside.value.trim() || "a + b";
+        let terms = insideRaw.split('+').map(t => t.trim()).filter(t => t.length > 0);
+        if (terms.length === 0) terms = ["a"];
+
+        // Build Multiplier Node
+        const mSpan = document.createElement('span');
+        mSpan.className = 'term';
+        mSpan.id = 'displayMultiplier';
+        mSpan.innerText = mVal;
+        expressionContainer.appendChild(mSpan);
+
+        // Open Bracket
+        const lb = document.createElement('span');
+        lb.className = 'bracket';
+        lb.innerText = '(';
+        expressionContainer.appendChild(lb);
+
+        // Build arbitrary inner terms dynamically
+        terms.forEach((termText, idx) => {
+            const tSpan = document.createElement('span');
+            tSpan.className = 'term inner-term';
+            tSpan.innerText = termText;
+            tSpan.setAttribute('data-base', termText);
+            expressionContainer.appendChild(tSpan);
+
+            if (idx < terms.length - 1) {
+                const plus = document.createElement('span');
+                plus.className = 'bracket';
+                plus.innerText = ' + ';
+                expressionContainer.appendChild(plus);
+            }
+        });
+
+        // Close Bracket
+        const rb = document.createElement('span');
+        rb.className = 'bracket';
+        rb.innerText = ')';
+        expressionContainer.appendChild(rb);
+    }
+
+    function setBirdPosition(x, y) {
+        mainBird.style.left = `${x}px`;
+        mainBird.style.top = `${y}px`;
+    }
+
+    function updateBands(x, y) {
+        bandLeft.setAttribute('x2', x); bandLeft.setAttribute('y2', y);
+        bandRight.setAttribute('x2', x); bandRight.setAttribute('y2', y);
+    }
+
+    mainBird.addEventListener('pointerdown', (e) => {
+        if (isFired) return;
+        isDragging = true;
+        mainBird.setPointerCapture(e.pointerId);
+    });
+
+    window.addEventListener('pointermove', (e) => {
+        if (!isDragging || isFired) return;
+        const rect = slingshotZone.getBoundingClientRect();
+        let targetX = e.clientX - rect.left;
+        let targetY = e.clientY - rect.top;
+
+        const dx = targetX - anchorX; const dy = targetY - anchorY;
+        const distance = Math.sqrt(dx*dx + dy*dy);
+        const maxStretch = 70;
+
+        if (distance > maxStretch) {
+            currentX = anchorX + (dx / distance) * maxStretch;
+            currentY = anchorY + (dy / distance) * maxStretch;
+        } else {
+            currentX = targetX; currentY = targetY;
+        }
+        setBirdPosition(currentX, currentY);
+        updateBands(currentX, currentY);
+    });
+
+    window.addEventListener('pointerup', () => {
+        if (!isDragging || isFired) return;
+        isDragging = false; isFired = true;
+        updateBands(anchorX, anchorY);
+        animatePrimaryLaunch();
+    });
+
+    function animatePrimaryLaunch() {
+        const displayMultiplier = document.getElementById('displayMultiplier');
+        const arenaRect = mathArena.getBoundingClientRect();
+        const multRect = displayMultiplier.getBoundingClientRect();
+        
+        const targetX = (multRect.left + multRect.width / 2) - arenaRect.left;
+        const targetY = (multRect.top + multRect.height / 2) - arenaRect.top;
+
+        const birdRect = mainBird.getBoundingClientRect();
+        let startX = birdRect.left - arenaRect.left + birdRect.width/2;
+        let startY = birdRect.top - arenaRect.top + birdRect.height/2;
+
+        let progress = 0;
+        function step() {
+            progress += 0.08; 
+            if (progress >= 1) {
+                mainBird.style.display = "none";
+                triggerImpactSplit(targetX, targetY);
+            } else {
+                let x = startX + (targetX - startX) * progress;
+                let y = startY + (targetY - startY) * progress;
+                mainBird.style.left = `${x - (birdRect.width / 2 - slingshotZone.offsetLeft)}px`;
+                mainBird.style.top = `${y - (birdRect.height / 2 - slingshotZone.offsetTop)}px`;
+                requestAnimationFrame(step);
+            }
+        }
+        requestAnimationFrame(step);
+    }
+
+    // Staggered multi-bird launching cascade sequence
+    function triggerImpactSplit(impactX, impactY) {
+        document.getElementById('displayMultiplier').style.opacity = "0.2";
+        
+        const mVal = inputMultiplier.value.trim() || "3";
+        const arenaRect = mathArena.getBoundingClientRect();
+        const innerTerms = document.querySelectorAll('.inner-term');
+        
+        let finalComponents = [];
+        let completedCount = 0;
+
+        innerTerms.forEach((termEl, index) => {
+            const tRect = termEl.getBoundingClientRect();
+            const destX = (tRect.left + tRect.width/2) - arenaRect.left;
+            const destY = tRect.top - arenaRect.top;
+            
+            const baseTermText = termEl.getAttribute('data-base');
+            const simplifiedResult = multiplyTerms(mVal, baseTermText);
+            finalComponents.push(simplifiedResult);
+
+            // Stagger each bird launch by 220ms for a gorgeous, clean visual parade effect
+            setTimeout(() => {
+                launchSplitBird(impactX, impactY, destX, destY, mVal, () => {
+                    termEl.classList.add('highlight');
+                    termEl.innerHTML = simplifiedResult;
+                    
+                    completedCount++;
+                    if (completedCount === innerTerms.length) {
+                        document.getElementById('finalAnswerText').innerHTML = finalComponents.join(" + ");
+                        resultBanner.classList.add('visible');
+                    }
+                }, 60 + (index * 20));
+            }, index * 220);
+        });
+    }
+
+    function launchSplitBird(startX, startY, endX, endY, displayValue, onComplete, arcHeight) {
+        const birdEl = document.createElement('div');
+        birdEl.className = 'split-bird';
+        birdEl.innerHTML = `${birdSvgMarkup}<div class="split-bird-value">${displayValue}</div>`;
+        animationOverlay.appendChild(birdEl);
+
+        let t = 0;
+        function frame() {
+            t += 0.03;
+            if (t >= 1) {
+                birdEl.remove();
+                onComplete();
+            } else {
+                const currentX = startX + (endX - startX) * t;
+                const currentY = (startY + (endY - startY) * t) - (arcHeight * 4 * t * (1 - t));
+                birdEl.style.left = `${currentX}px`;
+                birdEl.style.top = `${currentY}px`;
+                requestAnimationFrame(frame);
+            }
+        }
+        requestAnimationFrame(frame);
+    }
+
+    window.onload = resetSimulation;
+</script>
+
+</body>
+</html>
