@@ -50,7 +50,6 @@
             color: #1e293b;
         }
 
-        /* Flexible Layout Panel */
         .setup-panel {
             display: flex;
             justify-content: center;
@@ -91,7 +90,7 @@
         }
 
         #inputMultiplier { width: 90px; }
-        #inputInside { width: 280px; text-align: left; padding-left: 15px; }
+        #inputInside { width: 320px; text-align: left; padding-left: 15px; }
 
         .bracket-sign {
             font-size: 1.8rem;
@@ -100,7 +99,6 @@
             margin-top: 15px;
         }
 
-        /* Math Arena Display */
         .math-arena {
             position: relative;
             height: 280px;
@@ -117,23 +115,29 @@
         .expression {
             display: flex;
             align-items: center;
-            font-size: 3rem;
+            font-size: 2.8rem;
             font-weight: 800;
-            gap: 8px;
+            gap: 4px;
             position: relative;
             flex-wrap: nowrap;
             white-space: nowrap;
         }
 
         .bracket {
-            font-size: 4rem;
+            font-size: 3.8rem;
             font-weight: 300;
             color: #94a3b8;
         }
 
+        .operator-sign {
+            color: #475569;
+            padding: 0 6px;
+            font-weight: 500;
+        }
+
         .term {
             position: relative;
-            padding: 0 4px;
+            padding: 0 2px;
             transition: transform 0.2s, color 0.2s;
             display: inline-block;
         }
@@ -149,7 +153,6 @@
             line-height: 0;
         }
 
-        /* Slingshot Graphics */
         .slingshot-container {
             position: absolute;
             left: 5%;
@@ -214,7 +217,6 @@
             white-space: nowrap;
         }
 
-        /* Result Display Banner */
         .result-banner {
             margin-top: 30px;
             padding: 20px;
@@ -251,27 +253,22 @@
 <div class="container">
     <h1>Algebra Distribution Slingshot</h1>
 
-    <!-- Multi-Term Input Panel -->
     <div class="setup-panel">
         <div class="input-group">
             <label>Outside Term</label>
-            <input type="text" id="inputMultiplier" value="3a" maxlength="5" oninput="resetSimulation()">
+            <input type="text" id="inputMultiplier" value="3az" maxlength="6" oninput="resetSimulation()">
         </div>
         <div class="bracket-sign">(</div>
         <div class="input-group">
-            <label>Inside Terms (use + to separate)</label>
-            <input type="text" id="inputInside" value="a + b + c" maxlength="25" oninput="resetSimulation()">
+            <label>Inside Expression (+ or - separates terms)</label>
+            <input type="text" id="inputInside" value="a + 2bz + c - g" maxlength="35" oninput="resetSimulation()">
         </div>
         <div class="bracket-sign">)</div>
     </div>
 
-    <!-- Playground Canvas -->
     <div class="math-arena" id="mathArena">
-        <div class="expression" id="expressionContainer">
-            <!-- Dynamically generated terms will load here -->
-        </div>
+        <div class="expression" id="expressionContainer"></div>
 
-        <!-- Slingshot Core -->
         <div class="slingshot-container" id="slingshotZone">
             <svg class="slingshot-svg">
                 <line class="rubber-band" id="bandLeft" x1="15" y1="20" x2="40" y2="20" />
@@ -320,6 +317,7 @@
     let currentX = anchorX;
     let currentY = anchorY;
     let isFired = false;
+    let parsedTerms = []; // Holds structured representation of each inside term
 
     const birdSvgMarkup = `
         <svg viewBox="0 0 100 100" width="100%" height="100%">
@@ -330,11 +328,14 @@
             <polygon points="42,50 58,50 50,68" fill="#f59e0b" stroke="#d97706" stroke-width="2"/>
         </svg>`;
 
-    // 1) Robust Algebraic Core to handle multiplication like 3a * a = 3a²
+    // Core Algebra Engine: Computes custom signs and variables cleanly
     function multiplyTerms(term1, term2) {
         term1 = term1.trim();
         term2 = term2.trim();
         
+        if (!term1.startsWith('-') && !term1.startsWith('+')) term1 = '+' + term1;
+        if (!term2.startsWith('-') && !term2.startsWith('+')) term2 = '+' + term2;
+
         function parse(t) {
             if (!t) return { coeff: 1, vars: {} };
             const match = t.match(/^([+-]?\d*\.?\d*)(.*)$/);
@@ -364,19 +365,25 @@
         for (let v in p1.vars) finalVars[v] = (finalVars[v] || 0) + p1.vars[v];
         for (let v in p2.vars) finalVars[v] = (finalVars[v] || 0) + p2.vars[v];
         
-        let outStr = "";
-        if (finalCoeff === -1 && Object.keys(finalVars).length > 0) outStr += "-";
-        else if (finalCoeff !== 1 || Object.keys(finalVars).length === 0) outStr += finalCoeff;
+        let outSign = finalCoeff >= 0 ? '+' : '-';
+        let absCoeff = Math.abs(finalCoeff);
+        
+        let coreStr = "";
+        if (absCoeff !== 1 || Object.keys(finalVars).length === 0) {
+            coreStr += absCoeff;
+        }
         
         const sortedVars = Object.keys(finalVars).sort();
         for (let v of sortedVars) {
-            outStr += v;
-            if (finalVars[v] > 1) outStr += `<sup>${finalVars[v]}</sup>`;
+            outStr = v;
+            coreStr += v;
+            if (finalVars[v] > 1) coreStr += `<sup>${finalVars[v]}</sup>`;
         }
-        return outStr;
+        
+        return { sign: outSign, core: coreStr };
     }
 
-    // 2) Dynamic Layout Renderer based on arbitrary amount of input terms
+    // Modern Lexical Split Engine looking dynamically for + and - boundaries
     function resetSimulation() {
         isFired = false;
         isDragging = false;
@@ -393,39 +400,63 @@
         
         const mVal = inputMultiplier.value.trim() || "3";
         const insideRaw = inputInside.value.trim() || "a + b";
-        let terms = insideRaw.split('+').map(t => t.trim()).filter(t => t.length > 0);
-        if (terms.length === 0) terms = ["a"];
+        
+        // Match terms while saving their operational leading symbols cleanly
+        let matches = insideRaw.match(/[+-]?\s*[^+-]+/g) || [];
+        parsedTerms = [];
 
-        // Build Multiplier Node
+        matches.forEach((m) => {
+            let cleaned = m.replace(/\s+/g, '');
+            if (!cleaned) return;
+            
+            let sign = '+';
+            let core = cleaned;
+            
+            if (cleaned.startsWith('-')) {
+                sign = '-';
+                core = cleaned.substring(1);
+            } else if (cleaned.startsWith('+')) {
+                sign = '+';
+                core = cleaned.substring(1);
+            }
+            
+            parsedTerms.push({ sign, core });
+        });
+
+        if (parsedTerms.length === 0) parsedTerms.push({ sign: '+', core: 'a' });
+
+        // Generate Outside Multiplier DOM Node
         const mSpan = document.createElement('span');
         mSpan.className = 'term';
         mSpan.id = 'displayMultiplier';
         mSpan.innerText = mVal;
         expressionContainer.appendChild(mSpan);
 
-        // Open Bracket
+        // Generate Parenthesis Enclosure
         const lb = document.createElement('span');
         lb.className = 'bracket';
         lb.innerText = '(';
         expressionContainer.appendChild(lb);
 
-        // Build arbitrary inner terms dynamically
-        terms.forEach((termText, idx) => {
+        // Map and render out clean mathematical expression elements
+        parsedTerms.forEach((term, idx) => {
+            if (idx > 0) {
+                const opSpan = document.createElement('span');
+                opSpan.className = 'bracket operator-sign';
+                opSpan.innerText = ` ${term.sign} `;
+                expressionContainer.appendChild(opSpan);
+                term.opDomElement = opSpan;
+            } else {
+                term.opDomElement = null;
+            }
+
             const tSpan = document.createElement('span');
             tSpan.className = 'term inner-term';
-            tSpan.innerText = termText;
-            tSpan.setAttribute('data-base', termText);
+            tSpan.innerHTML = (idx === 0 && term.sign === '-') ? `-${term.core}` : term.core;
             expressionContainer.appendChild(tSpan);
-
-            if (idx < terms.length - 1) {
-                const plus = document.createElement('span');
-                plus.className = 'bracket';
-                plus.innerText = ' + ';
-                expressionContainer.appendChild(plus);
-            }
+            term.domElement = tSpan;
         });
 
-        // Close Bracket
         const rb = document.createElement('span');
         rb.className = 'bracket';
         rb.innerText = ')';
@@ -504,35 +535,50 @@
         requestAnimationFrame(step);
     }
 
-    // Staggered multi-bird launching cascade sequence
     function triggerImpactSplit(impactX, impactY) {
         document.getElementById('displayMultiplier').style.opacity = "0.2";
         
         const mVal = inputMultiplier.value.trim() || "3";
         const arenaRect = mathArena.getBoundingClientRect();
-        const innerTerms = document.querySelectorAll('.inner-term');
         
         let finalComponents = [];
         let completedCount = 0;
 
-        innerTerms.forEach((termEl, index) => {
-            const tRect = termEl.getBoundingClientRect();
+        parsedTerms.forEach((term, index) => {
+            const tRect = term.domElement.getBoundingClientRect();
             const destX = (tRect.left + tRect.width/2) - arenaRect.left;
             const destY = tRect.top - arenaRect.top;
             
-            const baseTermText = termEl.getAttribute('data-base');
-            const simplifiedResult = multiplyTerms(mVal, baseTermText);
-            finalComponents.push(simplifiedResult);
+            // Reconstruct total signed input block package for analytical computation
+            let fullInputTerm = term.sign + term.core;
+            const resultObj = multiplyTerms(mVal, fullInputTerm);
+            finalComponents.push(resultObj);
 
-            // Stagger each bird launch by 220ms for a gorgeous, clean visual parade effect
             setTimeout(() => {
                 launchSplitBird(impactX, impactY, destX, destY, mVal, () => {
-                    termEl.classList.add('highlight');
-                    termEl.innerHTML = simplifiedResult;
+                    term.domElement.classList.add('highlight');
+                    
+                    // Transform signs dynamically based on product answers
+                    if (index === 0) {
+                        term.domElement.innerHTML = resultObj.sign === '-' ? `-${resultObj.core}` : resultObj.core;
+                    } else {
+                        term.opDomElement.innerText = ` ${resultObj.sign} `;
+                        term.domElement.innerHTML = resultObj.core;
+                    }
                     
                     completedCount++;
-                    if (completedCount === innerTerms.length) {
-                        document.getElementById('finalAnswerText').innerHTML = finalComponents.join(" + ");
+                    if (completedCount === parsedTerms.length) {
+                        // Stitch final solutions banner neatly
+                        let finalStr = "";
+                        finalComponents.forEach((comp, cIdx) => {
+                            if (cIdx === 0) {
+                                finalStr += comp.sign === '-' ? `-${comp.core}` : comp.core;
+                            } else {
+                                finalStr += ` ${comp.sign} ${comp.core}`;
+                            }
+                        });
+                        
+                        document.getElementById('finalAnswerText').innerHTML = finalStr;
                         resultBanner.classList.add('visible');
                     }
                 }, 60 + (index * 20));
