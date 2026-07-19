@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Angry Birds Distributing Brackets</title>
+    <title>Angry Birds distributing brackets</title>
     <style>
         :root {
             --primary: #ef4444; 
@@ -29,12 +29,12 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
-            touch-action: none;
+            /* touch-action: none; REMOVED from here to restore natural page scrolling on mobile */
         }
 
         .container {
             width: 100%;
-            max-width: 950px; /* Expanded from 850px to accommodate 6+ terms beautifully */
+            max-width: 950px; 
             background: white;
             padding: 30px;
             border-radius: 28px;
@@ -110,12 +110,13 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
+            touch-action: none; /* ADDED HERE: Locks dragging gestures ONLY inside the game arena */
         }
 
         .expression {
             display: flex;
             align-items: center;
-            font-size: 2.6rem; /* Slightly balanced down to fit massive initial brackets cleanly */
+            font-size: 2.6rem; 
             font-weight: 800;
             gap: 4px;
             position: relative;
@@ -229,12 +230,11 @@
             opacity: 0;
             transform: translateY(10px);
             transition: all 0.4s ease-out;
-            
-            /* Fixes the "White Sheet" Overflow Bug */
-            white-space: normal;      /* Allows long algebra answers to wrap to a new line */
-            word-wrap: break-word;     /* Ensures layout structural safety */
+            white-space: normal;      
+            word-wrap: break-word;     
             line-height: 1.6;
         }
+        
         .result-banner.visible {
             opacity: 1;
             transform: translateY(0);
@@ -251,12 +251,70 @@
             font-weight: 700;
             cursor: pointer;
         }
+
+        /* MOBILE AND TABLET OPTIMIZATIONS */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                align-items: flex-start; /* Allows natural layout flow from top if screen is short */
+            }
+
+            .container {
+                padding: 15px;
+                border-radius: 20px;
+            }
+
+            h1 {
+                font-size: 1.3rem;
+                margin-bottom: 15px;
+            }
+
+            .setup-panel {
+                gap: 10px;
+                padding: 12px;
+                margin-bottom: 20px;
+            }
+
+            #inputInside {
+                width: 100%; /* Spans full width on phone screens to give space for long input */
+            }
+
+            .expression {
+                font-size: 1.5rem; /* Scales equation sizes down so 6 terms fit nicely without overlapping */
+            }
+
+            .bracket {
+                font-size: 2.2rem;
+            }
+
+            .math-arena {
+                height: 230px; /* Slightly more compact arena for handheld devices */
+            }
+
+            .slingshot-container {
+                left: 8%;
+                bottom: 10px;
+                width: 65px;
+                height: 90px;
+            }
+
+            .bird-projectile {
+                width: 38px;
+                height: 38px;
+            }
+
+            .result-banner {
+                font-size: 1.1rem;
+                padding: 15px;
+                margin-top: 20px;
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Angry Birds Distributing Brackets</h1>
+    <h1>Angry Birds distributing brackets</h1>
 
     <div class="setup-panel">
         <div class="input-group">
